@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -12,147 +12,195 @@
   }
 
   body {
-    font-family: 'Inter', system-ui, sans-serif;
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    background-color: #110334;
+    color: #ebe1ff;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
 
   ::selection {
-    background: rgba(108, 92, 231, 0.3);
-    color: white;
+    background: rgba(182, 160, 255, 0.25);
+    color: #ebe1ff;
   }
 
   ::-webkit-scrollbar {
-    width: 6px;
+    width: 5px;
   }
 
   ::-webkit-scrollbar-track {
-    background: #1A0D3D;
+    background: #110334;
   }
 
   ::-webkit-scrollbar-thumb {
-    background: #6C5CE7;
-    border-radius: 3px;
+    background: #4c4071;
+    border-radius: 999px;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background: #7F6EF3;
+    background: #7e51ff;
   }
 }
 
 @layer components {
-  .glass-card {
-    @apply bg-white/5 backdrop-blur-xl border border-white/10 rounded-card;
+
+  /* ── Glass & Surface Cards ── */
+  .card {
+    @apply bg-surface-high rounded-[1rem];
   }
 
-  .glass-card-light {
-    @apply bg-white/80 backdrop-blur-xl border border-gray-200/50 rounded-card shadow-lg;
+  .card-highest {
+    @apply bg-surface-highest rounded-[1rem];
   }
 
-  .gradient-primary {
-    @apply bg-gradient-to-r from-primary to-secondary;
+  .glass-nav {
+    background: rgba(76, 64, 113, 0.6);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
   }
 
-  .gradient-dark {
-    @apply bg-gradient-to-b from-dark to-dark-50;
-  }
-
+  /* ── Buttons ── */
   .btn-primary {
-    @apply px-6 py-3 bg-primary hover:bg-primary-600 text-white font-semibold rounded-btn
-    transition-all duration-200 ease-in-out transform hover:scale-[1.02]
-    active:scale-[0.98] shadow-lg shadow-primary/25 hover:shadow-primary/40
-    focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-2 focus:ring-offset-dark;
+    @apply inline-flex items-center justify-center gap-2
+           px-6 py-3 rounded-xl font-bold text-primary-on
+           transition-all duration-200
+           hover:scale-[1.03] active:scale-[0.97]
+           focus:outline-none focus:ring-2 focus:ring-primary/40;
+    background: linear-gradient(135deg, #b6a0ff 0%, #7e51ff 100%);
+    box-shadow: 0 8px 24px rgba(126, 81, 255, 0.3);
   }
 
-  .btn-secondary {
-    @apply px-6 py-3 bg-surface hover:bg-dark-50 text-white font-semibold rounded-btn
-    border border-white/10 hover:border-white/20
-    transition-all duration-200 ease-in-out transform hover:scale-[1.02]
-    active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-white/20;
-  }
-
-  .btn-danger {
-    @apply px-6 py-3 bg-danger hover:bg-red-700 text-white font-semibold rounded-btn
-    transition-all duration-200 ease-in-out shadow-lg shadow-danger/25
-    focus:outline-none focus:ring-2 focus:ring-danger/50;
+  .btn-primary:hover {
+    box-shadow: 0 12px 32px rgba(126, 81, 255, 0.45);
   }
 
   .btn-ghost {
-    @apply px-6 py-3 text-white/70 hover:text-white hover:bg-white/10
-    font-medium rounded-btn transition-all duration-200;
+    @apply inline-flex items-center justify-center gap-2
+           px-5 py-2.5 rounded-[1rem] font-semibold text-on-surface-variant
+           hover:text-on-surface hover:bg-surface-high
+           transition-all duration-200
+           focus:outline-none focus:ring-2 focus:ring-outline-variant/40;
   }
 
+  .btn-danger {
+    @apply inline-flex items-center justify-center gap-2
+           px-6 py-3 rounded-[1rem] font-bold text-error-on
+           bg-error hover:bg-error-dim
+           transition-all duration-200 hover:scale-[1.02] active:scale-[0.98];
+  }
+
+  /* ── Input Fields ── */
   .input-field {
-    @apply w-full px-4 py-3 bg-white/5 border border-white/10 rounded-btn text-white
-    placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-primary/50
-    focus:border-primary/50 transition-all duration-200;
+    @apply w-full px-4 py-3 rounded-[1rem]
+           bg-surface-mid text-on-surface
+           placeholder:text-on-surface-variant/40
+           focus:outline-none focus:ring-2 focus:ring-primary/40
+           transition-all duration-200;
   }
 
-  .input-field-light {
-    @apply w-full px-4 py-3 bg-white border border-gray-200 rounded-btn text-gray-900
-    placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/50
-    focus:border-primary/50 transition-all duration-200;
-  }
-
+  /* ── Answer Option Cards ── */
   .answer-card {
-    @apply p-6 rounded-answer cursor-pointer font-semibold text-white text-lg
-    transition-all duration-200 transform hover:scale-[1.03] hover:shadow-lg
-    active:scale-[0.98] border-2 border-transparent
-    focus:outline-none focus:ring-2 focus:ring-white/50;
+    @apply flex items-center gap-4 p-5 rounded-[1.5rem]
+           bg-surface-high cursor-pointer font-semibold text-on-surface
+           transition-all duration-200
+           hover:bg-surface-bright hover:scale-[1.02]
+           active:scale-[0.98]
+           focus:outline-none;
   }
 
-  .stat-card {
-    @apply glass-card p-6 flex flex-col gap-2;
+  .answer-card-correct {
+    @apply bg-success/20 ring-2 ring-success shadow-lg;
+    box-shadow: 0 0 24px rgba(74, 222, 128, 0.25);
   }
 
+  .answer-card-wrong {
+    @apply bg-error/20 ring-2 ring-error animate-shake;
+  }
+
+  .answer-card-disabled {
+    @apply opacity-40;
+  }
+
+  /* ── Sidebar ── */
   .sidebar-link {
-    @apply flex items-center gap-3 px-4 py-3 rounded-btn text-white/60
-    hover:text-white hover:bg-white/10 transition-all duration-200 font-medium;
+    @apply flex items-center gap-3 px-4 py-3 rounded-[1rem]
+           text-on-surface-variant font-medium
+           hover:text-on-surface hover:bg-surface-high
+           transition-all duration-200;
   }
 
   .sidebar-link-active {
-    @apply flex items-center gap-3 px-4 py-3 rounded-btn text-white
-    bg-primary/20 border-l-2 border-primary font-semibold;
+    @apply flex items-center gap-3 px-4 py-3 rounded-[1rem]
+           text-primary font-bold bg-primary/10;
   }
 
+  /* ── Badges ── */
   .badge {
-    @apply inline-flex items-center px-3 py-1 text-xs font-semibold rounded-pill;
+    @apply inline-flex items-center px-3 py-1 text-xs font-bold rounded-pill uppercase tracking-[0.05em];
   }
 
   .badge-active {
-    @apply badge bg-success/20 text-success;
+    @apply badge bg-success/15 text-success;
   }
 
   .badge-draft {
-    @apply badge bg-warning/20 text-warning;
+    @apply badge bg-tertiary/15 text-tertiary;
   }
 
   .badge-finished {
-    @apply badge bg-white/10 text-white/60;
+    @apply badge bg-surface-variant/30 text-on-surface-variant;
   }
 
+  .badge-streak {
+    @apply badge text-tertiary-on;
+    background: linear-gradient(135deg, #ffb86c, #e07b39);
+  }
+
+  /* ── Stat Cards ── */
+  .stat-card {
+    @apply card p-6 flex flex-col gap-2;
+  }
+
+  /* ── Table ── */
   .table-row {
-    @apply border-b border-white/5 hover:bg-white/5 transition-colors duration-150;
+    @apply border-b border-outline-variant/10
+           hover:bg-surface-high/60 transition-colors duration-150;
   }
 }
 
 @layer utilities {
+  /* Gradient text */
   .text-gradient {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary;
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(135deg, #b6a0ff 0%, #7e51ff 100%);
   }
 
-  .animate-in {
-    animation: animateIn 0.4s ease-out;
+  .text-gradient-secondary {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(135deg, #00d9b8 0%, #7e51ff 100%);
   }
 
-  @keyframes animateIn {
-    from {
-      opacity: 0;
-      transform: translateY(20px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
+  /* Glow helpers */
+  .glow-primary {
+    box-shadow: 0 0 32px rgba(182, 160, 255, 0.15);
+  }
+
+  .glow-secondary {
+    box-shadow: 0 0 32px rgba(0, 217, 184, 0.15);
+  }
+
+  /* Ghost border (accessibility fallback — no hard borders) */
+  .ghost-border {
+    box-shadow: inset 0 0 0 1px rgba(76, 64, 113, 0.15);
+  }
+
+  /* Animate in */
+  .animate-fade-up {
+    animation: fadeUp 0.4s ease-out forwards;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
   }
 }

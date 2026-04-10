@@ -15,14 +15,12 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-
     try {
       const result = await signIn("credentials", {
         email: form.email,
         password: form.password,
         redirect: false,
       });
-
       if (result?.error) {
         toast.error("Email atau password salah");
       } else {
@@ -38,41 +36,43 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen gradient-dark flex items-center justify-center px-6 relative overflow-hidden">
-      {/* Background */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary/20 rounded-full blur-[100px]" />
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-secondary/20 rounded-full blur-[100px]" />
+    <div className="min-h-screen bg-surface flex items-center justify-center px-6 relative overflow-hidden">
+      {/* Ambient */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute -top-48 -right-48 w-[500px] h-[500px] rounded-full opacity-15"
+          style={{ background: "radial-gradient(circle, #7e51ff, transparent)" }} />
+        <div className="absolute -bottom-48 -left-48 w-[500px] h-[500px] rounded-full opacity-10"
+          style={{ background: "radial-gradient(circle, #00d9b8, transparent)" }} />
       </div>
 
       <motion.div
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
+        transition={{ duration: 0.5 }}
         className="w-full max-w-md relative z-10"
       >
         {/* Logo */}
-        <Link href="/" className="flex items-center justify-center gap-3 mb-8">
-          <div className="w-12 h-12 rounded-answer gradient-primary flex items-center justify-center">
-            <span className="text-white font-bold text-2xl">Q</span>
+        <Link href="/" className="flex items-center justify-center gap-3 mb-10">
+          <div className="w-11 h-11 rounded-[1rem] flex items-center justify-center"
+            style={{ background: "linear-gradient(135deg, #b6a0ff, #7e51ff)" }}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+              <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" fill="white"/>
+            </svg>
           </div>
-          <span className="text-white font-bold text-2xl">QuizMaster Pro</span>
+          <span className="font-extrabold text-2xl text-gradient">QuizNeon</span>
         </Link>
 
-        <div className="glass-card p-8">
-          <h1 className="text-2xl font-bold text-white text-center mb-2">
+        <div className="card-highest p-8" style={{ boxShadow: "0 20px 48px rgba(0,0,0,0.4)" }}>
+          <h1 className="text-2xl font-extrabold text-on-surface text-center mb-1 tracking-[-0.01em]">
             Selamat Datang Kembali
           </h1>
-          <p className="text-white/50 text-center mb-8">
+          <p className="text-on-surface-variant text-sm text-center mb-8">
             Masuk ke akun Anda untuk melanjutkan
           </p>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label
-                htmlFor="email"
-                className="block text-white/70 text-sm font-medium mb-2"
-              >
+              <label htmlFor="email" className="block text-on-surface-variant text-xs font-bold uppercase tracking-[0.05em] mb-2">
                 Email
               </label>
               <input
@@ -87,10 +87,7 @@ export default function LoginPage() {
             </div>
 
             <div>
-              <label
-                htmlFor="password"
-                className="block text-white/70 text-sm font-medium mb-2"
-              >
+              <label htmlFor="password" className="block text-on-surface-variant text-xs font-bold uppercase tracking-[0.05em] mb-2">
                 Password
               </label>
               <input
@@ -107,46 +104,39 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="btn-primary w-full flex items-center justify-center gap-2"
+              className="btn-primary w-full mt-2"
               id="login-submit-btn"
             >
               {loading ? (
-                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              ) : (
-                "Masuk"
-              )}
+                <div className="w-5 h-5 rounded-full"
+                  style={{ border: "2px solid rgba(255,255,255,0.3)", borderTopColor: "white", animation: "spin 1s linear infinite" }} />
+              ) : "Masuk"}
             </button>
           </form>
 
-          <div className="mt-6 text-center">
-            <p className="text-white/40 text-sm">
-              Belum punya akun?{" "}
-              <Link
-                href="/register"
-                className="text-primary hover:text-primary-300 font-semibold transition-colors"
-              >
-                Daftar Sekarang
-              </Link>
-            </p>
-          </div>
+          <p className="text-on-surface-variant/50 text-sm text-center mt-6">
+            Belum punya akun?{" "}
+            <Link href="/register" className="text-primary font-semibold hover:text-on-surface transition-colors">
+              Daftar Sekarang
+            </Link>
+          </p>
         </div>
 
-        {/* Guest Mode */}
-        <motion.div
+        <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.4 }}
-          className="mt-6 text-center"
+          className="text-center mt-6"
         >
-          <p className="text-white/30 text-sm mb-3">atau</p>
-          <Link
-            href="/"
-            className="text-white/50 hover:text-white text-sm transition-colors"
-          >
-            ← Kembali ke beranda dan gabung quiz sebagai tamu
+          <Link href="/" className="text-on-surface-variant/40 hover:text-on-surface-variant text-sm transition-colors">
+            ← Kembali ke beranda
           </Link>
-        </motion.div>
+        </motion.p>
       </motion.div>
+
+      <style jsx global>{`
+        @keyframes spin { to { transform: rotate(360deg); } }
+      `}</style>
     </div>
   );
 }

@@ -9,66 +9,83 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        // Surface hierarchy — deep ink violet spectrum
+        surface: {
+          DEFAULT: "#110334",         // Base canvas
+          lowest: "#0c0225",          // Recessed / submerged
+          low: "#160840",             // Slightly above base
+          mid: "#1b0f4a",             // Mid layer
+          high: "#231554",            // Floating cards
+          highest: "#2c1d62",         // Most prominent / focus
+          bright: "#39286e",          // Bright interactive
+          variant: "#4c4071",         // Glass / outline base
+        },
+        // Primary — lavender purple
         primary: {
-          DEFAULT: "#6C5CE7",
-          50: "#F0EEFF",
-          100: "#DDD8FD",
-          200: "#B8AEFB",
-          300: "#9485F9",
-          400: "#7F6EF3",
-          500: "#6C5CE7",
-          600: "#5A48D5",
-          700: "#4835B3",
-          800: "#372891",
-          900: "#261B6F",
+          DEFAULT: "#b6a0ff",
+          dim: "#7e51ff",
+          on: "#160050",
         },
+        // on-surface text
+        "on-surface": "#ebe1ff",
+        "on-surface-variant": "#cbc2e8",
+        // Outline
+        "outline": "#7a6f99",
+        "outline-variant": "#4c4071",
+        // Secondary — electric teal
         secondary: {
-          DEFAULT: "#0984E3",
-          50: "#E8F4FD",
-          100: "#BEE1F9",
-          200: "#7DC2F3",
-          300: "#3CA4ED",
-          400: "#0984E3",
-          500: "#076EBF",
-          600: "#05579B",
-          700: "#044077",
-          800: "#022953",
-          900: "#01132F",
+          DEFAULT: "#00d9b8",
+          dim: "#009e87",
+          on: "#002b23",
         },
-        success: "#00B894",
-        danger: "#D63031",
-        warning: "#FDCB6E",
-        dark: {
-          DEFAULT: "#1A0D3D",
-          50: "#2D1B69",
-          100: "#251559",
-          200: "#1E1049",
-          300: "#1A0D3D",
-          400: "#150A32",
-          500: "#100727",
+        // Tertiary — warm amber (chips, streaks)
+        tertiary: {
+          DEFAULT: "#ffb86c",
+          dim: "#e07b39",
+          on: "#3d1500",
         },
-        surface: "#2D1B69",
-        "answer-blue": "#0984E3",
-        "answer-teal": "#00B894",
-        "answer-orange": "#E17055",
-        "answer-purple": "#A29BFE",
+        // Error / wrong
+        error: {
+          DEFAULT: "#ff6b8a",
+          dim: "#c0334f",
+          on: "#3d0011",
+        },
+        // Success / correct
+        success: {
+          DEFAULT: "#4ade80",
+          dim: "#16a34a",
+          on: "#001f0d",
+        },
+        // Answer option accent badges (1-4)
+        "opt-1": "#b6a0ff",   // primary lavender
+        "opt-2": "#00d9b8",   // secondary teal
+        "opt-3": "#ffb86c",   // tertiary amber
+        "opt-4": "#c084fc",   // soft violet
       },
       fontFamily: {
-        sans: ["Inter", "system-ui", "sans-serif"],
+        sans: ["Plus Jakarta Sans", "system-ui", "sans-serif"],
       },
       borderRadius: {
-        card: "16px",
-        answer: "12px",
-        btn: "8px",
-        pill: "999px",
+        "sm": "0.5rem",
+        "DEFAULT": "1rem",       // haptic default
+        "md": "1rem",
+        "lg": "1.5rem",
+        "xl": "3rem",            // large CTAs
+        "pill": "9999px",
+      },
+      boxShadow: {
+        "ambient": "0 20px 40px rgba(0,0,0,0.4)",
+        "glow-primary": "0 0 32px rgba(182,160,255,0.2)",
+        "glow-secondary": "0 0 32px rgba(0,217,184,0.2)",
+        "glow-btn": "0 8px 24px rgba(126,81,255,0.3)",
       },
       animation: {
         "float-up": "floatUp 1.2s ease-out forwards",
         "shake": "shake 0.4s ease-in-out",
         "pulse-glow": "pulseGlow 2s ease-in-out infinite",
         "slide-in": "slideIn 0.3s ease-out",
-        "confetti": "confetti 0.6s ease-out",
-        "count-up": "countUp 2s ease-out",
+        "fade-up": "fadeUp 0.4s ease-out forwards",
+        "spring-in": "springIn 0.5s cubic-bezier(0.4,0,0.2,1.5) forwards",
       },
       keyframes: {
         floatUp: {
@@ -84,17 +101,24 @@ const config: Config = {
           "80%": { transform: "translateX(8px)" },
         },
         pulseGlow: {
-          "0%, 100%": { boxShadow: "0 0 5px rgba(108, 92, 231, 0.3)" },
-          "50%": { boxShadow: "0 0 20px rgba(108, 92, 231, 0.6)" },
+          "0%, 100%": { boxShadow: "0 0 8px rgba(182,160,255,0.2)" },
+          "50%": { boxShadow: "0 0 32px rgba(182,160,255,0.5)" },
         },
         slideIn: {
           "0%": { transform: "translateX(100%)", opacity: "0" },
           "100%": { transform: "translateX(0)", opacity: "1" },
         },
-        confetti: {
-          "0%": { transform: "scale(0) rotate(0deg)", opacity: "1" },
-          "100%": { transform: "scale(1) rotate(180deg)", opacity: "0" },
+        fadeUp: {
+          "0%": { opacity: "0", transform: "translateY(20px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
         },
+        springIn: {
+          "0%": { opacity: "0", transform: "scale(0.8)" },
+          "100%": { opacity: "1", transform: "scale(1)" },
+        },
+      },
+      backdropBlur: {
+        "glass": "20px",
       },
     },
   },

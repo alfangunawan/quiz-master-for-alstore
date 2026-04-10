@@ -24,86 +24,92 @@ interface Props {
   }[];
 }
 
-const containerVariants = {
-  hidden: {},
-  visible: { transition: { staggerChildren: 0.1 } },
-};
-
 const itemVariants = {
   hidden: { opacity: 0, y: 20 },
   visible: { opacity: 1, y: 0, transition: { duration: 0.4 } },
 };
 
-export default function UserDashboardClient({
-  user,
-  stats,
-  recentSessions,
-}: Props) {
+const LightningIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+    <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" fill="white"/>
+  </svg>
+);
+
+export default function UserDashboardClient({ user, stats, recentSessions }: Props) {
   const [quizCode, setQuizCode] = useState("");
   const router = useRouter();
 
   const handleJoin = () => {
-    if (quizCode.length === 6) {
-      router.push(`/quiz/${quizCode}`);
-    }
+    if (quizCode.length === 6) router.push(`/quiz/${quizCode}`);
   };
 
   return (
-    <div className="min-h-screen gradient-dark">
+    <div className="min-h-screen bg-surface">
+      {/* Ambient */}
+      <div className="fixed inset-0 pointer-events-none z-0">
+        <div className="absolute -top-48 right-0 w-[500px] h-[500px] rounded-full opacity-10"
+          style={{ background: "radial-gradient(circle, #7e51ff, transparent)" }} />
+        <div className="absolute bottom-0 -left-32 w-[400px] h-[400px] rounded-full opacity-8"
+          style={{ background: "radial-gradient(circle, #00d9b8, transparent)" }} />
+      </div>
+
       {/* Top Nav */}
-      <nav className="flex items-center justify-between px-6 md:px-12 py-4 border-b border-white/5">
-        <Link href="/" className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-answer gradient-primary flex items-center justify-center">
-            <span className="text-white font-bold">Q</span>
-          </div>
-          <span className="text-white font-bold text-lg">QuizMaster Pro</span>
-        </Link>
-        <div className="flex items-center gap-4">
-          <Link href="/history" className="btn-ghost text-sm">
-            📋 Riwayat
+      <nav className="glass-nav relative z-10 px-8 py-4">
+        <div className="max-w-5xl mx-auto flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-[0.75rem] flex items-center justify-center"
+              style={{ background: "linear-gradient(135deg, #b6a0ff, #7e51ff)" }}>
+              <LightningIcon />
+            </div>
+            <span className="font-extrabold text-lg text-gradient">QuizNeon</span>
           </Link>
-          <button
-            onClick={() => signOut({ callbackUrl: "/login" })}
-            className="btn-ghost text-sm text-white/50"
-          >
-            Keluar
-          </button>
-          <div className="w-9 h-9 rounded-full bg-primary/30 flex items-center justify-center text-white font-bold text-sm">
-            {user.name.charAt(0).toUpperCase()}
+
+          <div className="flex items-center gap-3">
+            <Link href="/history" className="btn-ghost text-sm">
+              Riwayat
+            </Link>
+            <button
+              onClick={() => signOut({ callbackUrl: "/login" })}
+              className="btn-ghost text-sm text-on-surface-variant/50"
+            >
+              Keluar
+            </button>
+            <div className="w-9 h-9 rounded-[0.75rem] flex items-center justify-center font-bold text-sm"
+              style={{ background: "linear-gradient(135deg, #b6a0ff40, #7e51ff40)", color: "#b6a0ff" }}>
+              {user.name.charAt(0).toUpperCase()}
+            </div>
           </div>
         </div>
       </nav>
 
-      <main className="max-w-6xl mx-auto px-6 py-8">
+      <main className="relative z-10 max-w-5xl mx-auto px-6 py-10">
         <motion.div
-          variants={containerVariants}
           initial="hidden"
           animate="visible"
+          variants={{ visible: { transition: { staggerChildren: 0.1 } } }}
         >
           {/* Greeting */}
           <motion.div variants={itemVariants} className="mb-8">
-            <h1 className="text-3xl font-bold text-white mb-2">
-              Halo, {user.name}! 👋
+            <h1 className="text-3xl font-extrabold text-on-surface tracking-[-0.02em] mb-1">
+              Halo, {user.name}!
             </h1>
-            <p className="text-white/50">
+            <p className="text-on-surface-variant">
               Siap untuk quiz hari ini? Masukkan kode atau lihat riwayat Anda.
             </p>
           </motion.div>
 
-          {/* Join Quiz Section */}
-          <motion.div variants={itemVariants} className="glass-card p-6 mb-8">
-            <h2 className="text-white font-semibold text-lg mb-4">
-              🚀 Gabung Quiz
-            </h2>
-            <div className="flex flex-col sm:flex-row gap-4">
+          {/* Join Quiz */}
+          <motion.div variants={itemVariants} className="card p-6 mb-6">
+            <p className="text-on-surface-variant text-xs font-bold uppercase tracking-[0.05em] mb-4">
+              Gabung Quiz
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3">
               <input
                 type="text"
-                placeholder="Masukkan kode 6 karakter..."
+                placeholder="Kode 6 karakter..."
                 value={quizCode}
-                onChange={(e) =>
-                  setQuizCode(e.target.value.toUpperCase().slice(0, 6))
-                }
-                className="input-field flex-1 text-center text-lg tracking-[0.3em] font-bold uppercase"
+                onChange={(e) => setQuizCode(e.target.value.toUpperCase().slice(0, 6))}
+                className="input-field flex-1 text-center text-xl tracking-[0.3em] font-bold uppercase"
                 maxLength={6}
                 id="dashboard-quiz-code"
                 onKeyDown={(e) => e.key === "Enter" && handleJoin()}
@@ -111,7 +117,7 @@ export default function UserDashboardClient({
               <button
                 onClick={handleJoin}
                 disabled={quizCode.length !== 6}
-                className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
+                className="btn-primary disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100"
                 id="dashboard-join-btn"
               >
                 Gabung
@@ -119,98 +125,64 @@ export default function UserDashboardClient({
             </div>
           </motion.div>
 
-          {/* Stat Cards */}
-          <motion.div
-            variants={itemVariants}
-            className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8"
-          >
+          {/* Stats */}
+          <motion.div variants={itemVariants} className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
             {[
-              {
-                icon: "📝",
-                label: "Total Quiz Diikuti",
-                value: stats.totalQuizzes,
-              },
-              {
-                icon: "📊",
-                label: "Rata-rata Skor",
-                value: `${stats.avgScore}%`,
-              },
-              {
-                icon: "✅",
-                label: "Quiz Diselesaikan",
-                value: stats.completedQuizzes,
-              },
-              {
-                icon: "🏆",
-                label: "Peringkat Terbaik",
-                value: stats.bestRank > 0 ? `#${stats.bestRank}` : "-",
-              },
+              { label: "Total Quiz", value: stats.totalQuizzes, color: "#b6a0ff" },
+              { label: "Rata-rata Skor", value: `${stats.avgScore}%`, color: "#00d9b8" },
+              { label: "Diselesaikan", value: stats.completedQuizzes, color: "#4ade80" },
+              { label: "Peringkat Terbaik", value: stats.bestRank > 0 ? `#${stats.bestRank}` : "—", color: "#ffb86c" },
             ].map((stat, i) => (
-              <motion.div
-                key={i}
-                whileHover={{ y: -4 }}
-                className="stat-card"
-              >
-                <span className="text-2xl">{stat.icon}</span>
-                <span className="text-white/50 text-sm">{stat.label}</span>
-                <span className="text-white font-bold text-2xl">
+              <motion.div key={i} whileHover={{ y: -4 }} className="card p-5">
+                <p className="text-on-surface-variant text-xs font-bold uppercase tracking-[0.05em] mb-3">{stat.label}</p>
+                <p className="text-2xl font-extrabold tracking-[-0.01em]" style={{ color: stat.color }}>
                   {stat.value}
-                </span>
+                </p>
               </motion.div>
             ))}
           </motion.div>
 
-          {/* Recent Quiz */}
-          <motion.div variants={itemVariants} className="glass-card p-6">
+          {/* Recent Sessions */}
+          <motion.div variants={itemVariants} className="card p-6">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-white font-semibold text-lg">
-                📋 Quiz Terakhir
-              </h2>
-              <Link
-                href="/history"
-                className="text-primary text-sm hover:text-primary-300 transition-colors"
-              >
+              <p className="text-on-surface-variant text-xs font-bold uppercase tracking-[0.05em]">
+                Quiz Terakhir
+              </p>
+              <Link href="/history" className="text-primary text-sm font-semibold hover:text-on-surface transition-colors">
                 Lihat Semua →
               </Link>
             </div>
 
             {recentSessions.length === 0 ? (
-              <div className="text-center py-12">
-                <div className="text-4xl mb-4">🎯</div>
-                <p className="text-white/50">
-                  Anda belum mengikuti quiz apapun.
-                </p>
-                <p className="text-white/30 text-sm mt-2">
-                  Masukkan kode quiz di atas untuk memulai!
-                </p>
+              <div className="text-center py-14">
+                <div className="w-14 h-14 rounded-[1.5rem] bg-surface-mid flex items-center justify-center mx-auto mb-4">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                    <circle cx="12" cy="12" r="10" stroke="#4c4071" strokeWidth="1.8"/>
+                    <path d="M12 8v5M12 16h.01" stroke="#4c4071" strokeWidth="2" strokeLinecap="round"/>
+                  </svg>
+                </div>
+                <p className="text-on-surface-variant font-semibold">Belum ada quiz</p>
+                <p className="text-on-surface-variant/40 text-sm mt-1">Masukkan kode quiz di atas untuk memulai</p>
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-2">
                 {recentSessions.map((session) => (
                   <motion.div
                     key={session.id}
-                    whileHover={{
-                      backgroundColor: "rgba(255,255,255,0.05)",
-                    }}
-                    className="flex items-center justify-between p-4 rounded-answer transition-colors"
+                    whileHover={{ backgroundColor: "rgba(35,21,84,0.6)" }}
+                    className="flex items-center justify-between p-4 rounded-[1rem] transition-colors"
                   >
                     <div>
-                      <p className="text-white font-medium">
-                        {session.quizTitle}
-                      </p>
-                      <p className="text-white/40 text-sm">
+                      <p className="text-on-surface font-semibold text-sm">{session.quizTitle}</p>
+                      <p className="text-on-surface-variant text-xs mt-0.5">
                         {new Date(session.createdAt).toLocaleDateString("id-ID", {
-                          day: "numeric",
-                          month: "long",
-                          year: "numeric",
+                          day: "numeric", month: "long", year: "numeric",
                         })}
                       </p>
                     </div>
                     <div className="text-right">
-                      <p className="text-white font-bold">{session.score} pts</p>
-                      <p className="text-white/40 text-sm">
-                        {Math.round(session.accuracy)}% akurasi
-                      </p>
+                      <p className="text-on-surface font-bold text-sm">{session.score.toLocaleString()} pts</p>
+                      <p className="text-on-surface-variant text-xs mt-0.5">{Math.round(session.accuracy)}% akurasi</p>
                     </div>
                   </motion.div>
                 ))}

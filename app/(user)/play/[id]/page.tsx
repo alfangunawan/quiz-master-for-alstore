@@ -39,22 +39,43 @@ interface LeaderEntry {
   accuracy: number;
 }
 
-const answerColors = [
-  "bg-answer-blue",
-  "bg-answer-teal",
-  "bg-answer-orange",
-  "bg-answer-purple",
+// Option badge accent colors (1-4)
+const optionAccents = [
+  { bg: "rgba(182,160,255,0.15)", ring: "#b6a0ff", badge: "linear-gradient(135deg,#b6a0ff,#7e51ff)" },
+  { bg: "rgba(0,217,184,0.12)",   ring: "#00d9b8", badge: "linear-gradient(135deg,#00d9b8,#009e87)" },
+  { bg: "rgba(255,184,108,0.12)", ring: "#ffb86c", badge: "linear-gradient(135deg,#ffb86c,#e07b39)" },
+  { bg: "rgba(192,132,252,0.12)", ring: "#c084fc", badge: "linear-gradient(135deg,#c084fc,#9333ea)" },
 ];
 
-const containerVariants = {
-  hidden: {},
-  visible: { transition: { staggerChildren: 0.1 } },
+const cardVariants = {
+  hidden: { opacity: 0, y: 30 },
+  visible: (i: number) => ({
+    opacity: 1, y: 0,
+    transition: { duration: 0.35, delay: i * 0.08, ease: "easeOut" },
+  }),
 };
 
-const cardVariants = {
-  hidden: { opacity: 0, y: 40 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: "easeOut" } },
-};
+// Icons
+const BarChartIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+    <rect x="3" y="12" width="4" height="9" rx="1" fill="currentColor" opacity=".6"/>
+    <rect x="10" y="7" width="4" height="14" rx="1" fill="currentColor"/>
+    <rect x="17" y="3" width="4" height="18" rx="1" fill="currentColor" opacity=".6"/>
+  </svg>
+);
+
+const UserIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+    <circle cx="12" cy="8" r="4" stroke="currentColor" strokeWidth="1.8"/>
+    <path d="M4 20c0-4 3.582-7 8-7s8 3 8 7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+  </svg>
+);
+
+const LightningIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+    <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" fill="white"/>
+  </svg>
+);
 
 export default function PlayQuizPage() {
   const params = useParams();
@@ -64,6 +85,7 @@ export default function PlayQuizPage() {
   const [phase, setPhase] = useState<"loading" | "playing" | "feedback" | "result">("loading");
   const [sessionId, setSessionId] = useState("");
   const [quizTitle, setQuizTitle] = useState("");
+  const [category, setCategory] = useState("Quiz");
   const [questions, setQuestions] = useState<QuestionData[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [score, setScore] = useState(0);
@@ -88,6 +110,7 @@ export default function PlayQuizPage() {
         if (!res.ok) { setError(data.error || "Gagal memuat quiz"); return; }
         setSessionId(data.sessionId);
         setQuizTitle(data.quiz.title);
+        setCategory(data.quiz.category || "Quiz");
         setQuestions(data.questions);
         setPhase("playing");
       } catch { setError("Gagal memuat quiz"); }
@@ -124,7 +147,7 @@ export default function PlayQuizPage() {
         hasTimedUpRef.current = false;
         setPhase("playing");
       }
-    }, 2000);
+    }, 2500);
   }, [currentIndex, questions, sessionId, quizId]);
 
   useEffect(() => {
@@ -180,7 +203,7 @@ export default function PlayQuizPage() {
         setFeedback(null);
         setPhase("playing");
       }
-    }, 2000);
+    }, 2500);
   };
 
   const finishQuiz = async () => {
@@ -199,196 +222,409 @@ export default function PlayQuizPage() {
     }
   };
 
+  // ── Error ──
   if (error) return (
-    <div className="min-h-screen gradient-dark flex items-center justify-center px-6">
-      <div className="glass-card p-12 text-center max-w-md">
-        <div className="text-5xl mb-4">😕</div>
-        <h1 className="text-2xl font-bold text-white mb-2">Error</h1>
-        <p className="text-white/50 mb-6">{error}</p>
-        <button onClick={() => router.push("/")} className="btn-primary">Kembali</button>
+    <div className="min-h-screen bg-surface flex items-center justify-center px-6">
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-96 h-96 rounded-full opacity-20"
+          style={{ background: "radial-gradient(circle, #7e51ff, transparent)" }} />
+      </div>
+      <div className="card p-12 text-center max-w-md relative z-10">
+        <div className="w-16 h-16 rounded-[1.5rem] bg-error/10 flex items-center justify-center mx-auto mb-6">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="10" stroke="#ff6b8a" strokeWidth="1.8"/>
+            <path d="M12 8v4M12 16h.01" stroke="#ff6b8a" strokeWidth="2" strokeLinecap="round"/>
+          </svg>
+        </div>
+        <h1 className="text-2xl font-extrabold text-on-surface mb-2">Gagal Memuat</h1>
+        <p className="text-on-surface-variant mb-8">{error}</p>
+        <button onClick={() => router.push("/")} className="btn-primary w-full">Kembali ke Beranda</button>
       </div>
     </div>
   );
 
+  // ── Loading ──
   if (phase === "loading") return (
-    <div className="min-h-screen gradient-dark flex items-center justify-center">
+    <div className="min-h-screen bg-surface flex items-center justify-center">
       <div className="text-center">
-        <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: "linear" }} className="w-16 h-16 border-4 border-primary/30 border-t-primary rounded-full mx-auto mb-6" />
-        <p className="text-white/50 text-lg">Memuat quiz...</p>
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
+          className="w-14 h-14 rounded-full mx-auto mb-6"
+          style={{ border: "3px solid rgba(182,160,255,0.2)", borderTopColor: "#b6a0ff" }}
+        />
+        <p className="text-on-surface-variant font-medium">Memuat quiz...</p>
       </div>
     </div>
   );
 
-  // RESULT
+  // ── Result ──
   if (phase === "result" && result) {
-    const grade = result.accuracy >= 90 ? { label: "Excellent!", emoji: "🏆", color: "#FFD700" }
-      : result.accuracy >= 70 ? { label: "Good!", emoji: "⭐", color: "#00B894" }
-      : result.accuracy >= 50 ? { label: "Fair", emoji: "👍", color: "#FDCB6E" }
-      : { label: "Try Again", emoji: "💪", color: "#D63031" };
+    const grade = result.accuracy >= 90
+      ? { label: "Excellent!", color: "#b6a0ff", sub: "Luar biasa! Kamu sangat hebat." }
+      : result.accuracy >= 70
+      ? { label: "Great Job!", color: "#00d9b8", sub: "Bagus! Hampir sempurna." }
+      : result.accuracy >= 50
+      ? { label: "Good Try", color: "#ffb86c", sub: "Lumayan! Terus berlatih." }
+      : { label: "Keep Going", color: "#ff6b8a", sub: "Jangan menyerah, coba lagi!" };
 
     return (
-      <div className="min-h-screen gradient-dark px-6 py-12 relative overflow-hidden">
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary/20 rounded-full blur-[100px]" />
-          <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-success/20 rounded-full blur-[100px]" />
+      <div className="min-h-screen bg-surface px-6 py-12 relative overflow-hidden">
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute -top-48 -right-48 w-[500px] h-[500px] rounded-full opacity-20"
+            style={{ background: "radial-gradient(circle, #b6a0ff, transparent)" }} />
+          <div className="absolute -bottom-48 -left-48 w-[500px] h-[500px] rounded-full opacity-15"
+            style={{ background: "radial-gradient(circle, #00d9b8, transparent)" }} />
         </div>
-        <div className="max-w-2xl mx-auto relative z-10">
-          <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.6, type: "spring" }} className="text-center mb-8">
-            <div className="text-7xl mb-4">{grade.emoji}</div>
-            <h1 className="text-4xl md:text-5xl font-extrabold mb-2" style={{ color: grade.color }}>{grade.label}</h1>
-            <p className="text-white/50 text-lg">{quizTitle}</p>
+
+        <div className="max-w-xl mx-auto relative z-10">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.85 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.6, type: "spring", bounce: 0.3 }}
+            className="text-center mb-8"
+          >
+            <div className="inline-flex items-center justify-center w-20 h-20 rounded-[1.5rem] mb-6"
+              style={{ background: `${grade.color}20` }}>
+              <span className="text-4xl font-extrabold" style={{ color: grade.color }}>
+                {result.accuracy >= 90 ? "★" : result.accuracy >= 70 ? "✓" : result.accuracy >= 50 ? "↑" : "↺"}
+              </span>
+            </div>
+            <h1 className="text-5xl font-extrabold tracking-[-0.02em] mb-2" style={{ color: grade.color }}>
+              {grade.label}
+            </h1>
+            <p className="text-on-surface-variant">{grade.sub}</p>
+            <p className="text-on-surface-variant/50 text-sm mt-1">{quizTitle}</p>
           </motion.div>
 
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} className="glass-card p-8 text-center mb-6">
-            <p className="text-white/40 text-sm mb-2">Total Skor</p>
-            <p className="text-6xl font-extrabold text-gradient">{result.score.toLocaleString()}</p>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="card p-8 text-center mb-4"
+          >
+            <p className="text-on-surface-variant text-sm font-semibold uppercase tracking-[0.05em] mb-2">Total Skor</p>
+            <p className="text-6xl font-extrabold text-gradient tracking-[-0.02em]">
+              {result.score.toLocaleString()}
+            </p>
           </motion.div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+          <div className="grid grid-cols-2 gap-3 mb-4">
             {[
-              { label: "Benar", value: result.correctAnswers, icon: "✅" },
-              { label: "Salah", value: result.wrongAnswers, icon: "❌" },
-              { label: "Akurasi", value: `${Math.round(result.accuracy)}%`, icon: "🎯" },
-              { label: "Peringkat", value: `#${result.rank}`, icon: "🏅" },
+              { label: "Benar", value: result.correctAnswers, color: "#4ade80" },
+              { label: "Salah", value: result.wrongAnswers, color: "#ff6b8a" },
+              { label: "Akurasi", value: `${Math.round(result.accuracy)}%`, color: "#b6a0ff" },
+              { label: "Peringkat", value: `#${result.rank}`, color: "#ffb86c" },
             ].map((stat, i) => (
-              <motion.div key={i} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 + i * 0.1 }} className="glass-card p-4 text-center">
-                <span className="text-2xl">{stat.icon}</span>
-                <p className="text-white font-bold text-xl mt-2">{stat.value}</p>
-                <p className="text-white/40 text-xs">{stat.label}</p>
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.35 + i * 0.08 }}
+                className="card p-5 text-center"
+              >
+                <p className="text-2xl font-extrabold" style={{ color: stat.color }}>{stat.value}</p>
+                <p className="text-on-surface-variant text-xs mt-1 uppercase tracking-[0.05em]">{stat.label}</p>
               </motion.div>
             ))}
           </div>
 
           {leaderboard.length > 0 && (
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.8 }} className="glass-card p-6 mb-6">
-              <h2 className="text-white font-bold text-lg mb-4">🏆 Leaderboard</h2>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.7 }}
+              className="card p-6 mb-6"
+            >
+              <h2 className="text-on-surface font-bold text-base mb-4 uppercase tracking-[0.05em]">Leaderboard</h2>
               <div className="space-y-2">
                 {leaderboard.map((entry, i) => (
-                  <div key={i} className={`flex items-center justify-between p-3 rounded-answer ${i < 3 ? "bg-white/10" : "bg-white/5"}`}>
+                  <div key={i} className={`flex items-center justify-between p-3 rounded-[1rem] ${i < 3 ? "bg-surface-highest" : "bg-surface-mid"}`}>
                     <div className="flex items-center gap-3">
-                      <span className={`font-bold text-lg ${i === 0 ? "text-yellow-400" : i === 1 ? "text-gray-300" : i === 2 ? "text-amber-600" : "text-white/40"}`}>#{entry.rank}</span>
-                      <span className="text-white font-medium">{entry.name}</span>
+                      <span className="font-bold text-sm w-6 text-center" style={{
+                        color: i === 0 ? "#ffb86c" : i === 1 ? "#cbc2e8" : i === 2 ? "#e07b39" : "#4c4071"
+                      }}>#{entry.rank}</span>
+                      <span className="text-on-surface text-sm font-medium">{entry.name}</span>
                     </div>
-                    <span className="text-white font-bold">{entry.score.toLocaleString()}</span>
+                    <span className="text-on-surface font-bold text-sm">{entry.score.toLocaleString()}</span>
                   </div>
                 ))}
               </div>
             </motion.div>
           )}
 
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1 }} className="flex items-center justify-center gap-4">
-            <button onClick={() => router.push("/dashboard")} className="btn-secondary">📋 Dashboard</button>
-            <button onClick={() => router.push("/")} className="btn-primary">🏠 Kembali</button>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.9 }}
+            className="flex gap-3"
+          >
+            <button onClick={() => router.push("/dashboard")} className="btn-ghost flex-1">
+              Dashboard
+            </button>
+            <button onClick={() => router.push("/")} className="btn-primary flex-1">
+              Kembali
+            </button>
           </motion.div>
         </div>
       </div>
     );
   }
 
-  // PLAYING
+  // ── Playing ──
   const question = questions[currentIndex];
   if (!question) return null;
 
   const timerPercent = (timeRemaining / question.timeLimit) * 100;
-  const timerColor = timerPercent > 50 ? "bg-success" : timerPercent > 25 ? "bg-warning" : "bg-danger";
+  const isLowTime = timeRemaining <= 5;
 
   return (
-    <div className="min-h-screen gradient-dark flex flex-col">
-      <header className="flex items-center justify-between px-6 py-4 border-b border-white/5">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg gradient-primary flex items-center justify-center">
-            <span className="text-white font-bold text-sm">Q</span>
-          </div>
-          <span className="text-white/60 text-sm font-medium">Soal {currentIndex + 1}/{questions.length}</span>
-        </div>
-        <div className="flex items-center gap-6">
-          <div className="flex items-center gap-2 text-white/60">
-            <span>⏱</span>
-            <span className={`font-mono font-bold text-lg ${timeRemaining <= 5 ? "text-danger animate-pulse" : "text-white"}`}>{timeRemaining}s</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-white/40 text-sm">Poin:</span>
-            <span className="text-white font-bold text-lg">{score.toLocaleString()}</span>
-          </div>
-          {streak >= 3 && (
-            <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="badge bg-orange-500/20 text-orange-400">🔥 {streak} Streak!</motion.div>
-          )}
-        </div>
-      </header>
-
-      <div className="h-1.5 bg-white/5">
-        <div className={`h-full ${timerColor} transition-all duration-1000 ease-linear`} style={{ width: `${timerPercent}%` }} />
+    <div className="min-h-screen bg-surface flex flex-col">
+      {/* Ambient orbs */}
+      <div className="fixed inset-0 pointer-events-none z-0">
+        <div className="absolute top-0 right-0 w-[400px] h-[400px] rounded-full opacity-10"
+          style={{ background: "radial-gradient(circle, #7e51ff, transparent)" }} />
+        <div className="absolute bottom-0 left-0 w-[300px] h-[300px] rounded-full opacity-8"
+          style={{ background: "radial-gradient(circle, #00d9b8, transparent)" }} />
       </div>
 
-      <main className="flex-1 flex flex-col items-center justify-center px-6 py-8 max-w-4xl mx-auto w-full">
-        <AnimatePresence mode="wait">
-          <motion.div key={currentIndex} variants={containerVariants} initial="hidden" animate="visible" className="w-full">
-            <motion.div variants={cardVariants} className="text-center mb-10">
-              <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-white leading-snug">{question.text}</h2>
-            </motion.div>
+      {/* ── Header ── */}
+      <header className="glass-nav relative z-10 px-6 py-4">
+        <div className="max-w-5xl mx-auto flex items-center justify-between gap-4">
+          {/* Logo */}
+          <div className="flex items-center gap-2 shrink-0">
+            <div className="w-8 h-8 rounded-[0.625rem] flex items-center justify-center"
+              style={{ background: "linear-gradient(135deg,#b6a0ff,#7e51ff)" }}>
+              <LightningIcon />
+            </div>
+            <span className="font-extrabold text-gradient hidden sm:block">QuizNeon</span>
+          </div>
 
-            {question.type === "SHORT_ANSWER" ? (
-              <motion.div variants={cardVariants} className="max-w-lg mx-auto">
-                <div className="flex gap-3">
-                  <input type="text" value={shortAnswer} onChange={(e) => setShortAnswer(e.target.value)}
-                    placeholder="Ketik jawaban Anda..." className="input-field text-lg text-center" disabled={phase !== "playing"} autoFocus
-                    onKeyDown={(e) => e.key === "Enter" && shortAnswer.trim() && handleSelectAnswer(shortAnswer)} id="short-answer-input" />
-                  <button onClick={() => handleSelectAnswer(shortAnswer)} disabled={phase !== "playing" || !shortAnswer.trim()} className="btn-primary">Kirim</button>
-                </div>
-              </motion.div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {question.options.map((option, i) => {
-                  let extraClasses = "";
-                  if (feedback) {
-                    if (feedback.correctAnswers.includes(option.id)) extraClasses = "!bg-success ring-2 ring-success shadow-lg shadow-success/30";
-                    else if (selectedAnswer === option.id && !feedback.isCorrect) extraClasses = "!bg-danger ring-2 ring-danger animate-shake";
-                    else extraClasses = "opacity-50";
-                  } else if (selectedAnswer === option.id) extraClasses = "ring-2 ring-white";
+          {/* Center — progress + points + streak */}
+          <div className="flex items-center gap-5">
+            <div className="text-center">
+              <p className="text-on-surface-variant text-[10px] font-bold uppercase tracking-[0.08em]">Progress</p>
+              <p className="text-on-surface font-bold text-sm leading-none mt-0.5">
+                Question {currentIndex + 1}/{questions.length}
+              </p>
+            </div>
 
-                  return (
-                    <motion.button key={option.id} variants={cardVariants} whileHover={phase === "playing" ? { scale: 1.03 } : {}}
-                      whileTap={phase === "playing" ? { scale: 0.97 } : {}} onClick={() => handleSelectAnswer(option.id)}
-                      disabled={phase !== "playing"} className={`answer-card ${answerColors[i % 4]} ${extraClasses}`} id={`answer-${option.id}`}>
-                      <div className="flex items-center gap-4">
-                        <span className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-sm font-bold">{String.fromCharCode(65 + i)}</span>
-                        <span className="flex-1 text-left">{option.text}</span>
-                        {feedback && feedback.correctAnswers.includes(option.id) && <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} className="text-2xl">✅</motion.span>}
-                        {feedback && selectedAnswer === option.id && !feedback.correctAnswers.includes(option.id) && <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} className="text-2xl">❌</motion.span>}
-                      </div>
-                    </motion.button>
-                  );
-                })}
-              </div>
-            )}
+            <div className="text-center">
+              <p className="text-on-surface-variant text-[10px] font-bold uppercase tracking-[0.08em]">Points</p>
+              <p className="font-bold text-sm leading-none mt-0.5 text-gradient">{score.toLocaleString()}</p>
+            </div>
 
             <AnimatePresence>
-              {feedback && feedback.pointsEarned > 0 && (
-                <motion.div initial={{ opacity: 0, y: 0 }} animate={{ opacity: [0, 1, 0], y: -60 }} transition={{ duration: 1.2 }} className="text-center mt-6">
-                  <span className="text-3xl font-extrabold text-success">+{feedback.pointsEarned} 🔥</span>
-                </motion.div>
-              )}
-              {feedback && feedback.pointsEarned === 0 && (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center mt-6">
-                  <span className="text-xl text-danger font-bold">{selectedAnswer ? "Jawaban salah" : "Waktu habis!"}</span>
+              {streak >= 1 && (
+                <motion.div
+                  initial={{ scale: 0, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0, opacity: 0 }}
+                  className="badge-streak flex items-center gap-1.5 px-3 py-1.5 rounded-pill text-xs font-bold"
+                >
+                  🔥 {streak} Streak
                 </motion.div>
               )}
             </AnimatePresence>
+          </div>
 
-            {feedback?.explanation && (
-              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mt-6 p-4 bg-white/5 rounded-answer text-center">
-                <p className="text-white/40 text-xs mb-1">💡 Penjelasan</p>
-                <p className="text-white/70 text-sm">{feedback.explanation}</p>
-              </motion.div>
-            )}
-          </motion.div>
-        </AnimatePresence>
+          {/* Right icons */}
+          <div className="flex items-center gap-3 shrink-0">
+            <button className="w-9 h-9 rounded-[0.75rem] bg-surface-high flex items-center justify-center text-on-surface-variant hover:text-on-surface transition-colors">
+              <BarChartIcon />
+            </button>
+            <button className="w-9 h-9 rounded-[0.75rem] bg-surface-high flex items-center justify-center text-on-surface-variant hover:text-on-surface transition-colors">
+              <UserIcon />
+            </button>
+          </div>
+        </div>
+      </header>
+
+      {/* ── Main ── */}
+      <main className="flex-1 flex flex-col items-center justify-center px-6 py-8 relative z-10">
+        <div className="w-full max-w-3xl">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={currentIndex}
+              initial={{ opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -16 }}
+              transition={{ duration: 0.35, ease: "easeOut" }}
+            >
+              {/* Question Card */}
+              <div className="card-highest p-8 mb-6" style={{ boxShadow: "0 20px 40px rgba(0,0,0,0.35)" }}>
+                <p className="text-secondary font-bold text-xs uppercase tracking-[0.08em] mb-4">
+                  {category} • Level {currentIndex + 1}
+                </p>
+                <h2 className="text-on-surface text-2xl md:text-3xl font-extrabold leading-snug tracking-[-0.01em]">
+                  {question.text}
+                </h2>
+              </div>
+
+              {/* Timer */}
+              <div className="mb-6 px-1">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-on-surface-variant text-[10px] font-bold uppercase tracking-[0.08em]">
+                    Time Remaining
+                  </span>
+                  <span className={`font-bold text-sm font-mono ${isLowTime ? "text-error animate-pulse" : "text-on-surface"}`}>
+                    {timeRemaining}s
+                  </span>
+                </div>
+                <div className="h-2 rounded-pill bg-surface-lowest overflow-hidden">
+                  <motion.div
+                    className="h-full rounded-pill"
+                    style={{
+                      background: isLowTime
+                        ? "linear-gradient(90deg, #ff6b8a, #c0334f)"
+                        : "linear-gradient(90deg, #00d9b8, #b6a0ff)",
+                      width: `${timerPercent}%`,
+                    }}
+                    transition={{ duration: 0.9, ease: "linear" }}
+                  />
+                </div>
+              </div>
+
+              {/* Answers */}
+              {question.type === "SHORT_ANSWER" ? (
+                <div className="flex gap-3">
+                  <input
+                    type="text"
+                    value={shortAnswer}
+                    onChange={(e) => setShortAnswer(e.target.value)}
+                    placeholder="Ketik jawaban Anda..."
+                    className="input-field text-lg text-center flex-1"
+                    disabled={phase !== "playing"}
+                    autoFocus
+                    onKeyDown={(e) => e.key === "Enter" && shortAnswer.trim() && handleSelectAnswer(shortAnswer)}
+                    id="short-answer-input"
+                  />
+                  <button
+                    onClick={() => handleSelectAnswer(shortAnswer)}
+                    disabled={phase !== "playing" || !shortAnswer.trim()}
+                    className="btn-primary disabled:opacity-40"
+                  >
+                    Kirim
+                  </button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {question.options.map((option, i) => {
+                    const accent = optionAccents[i % 4];
+                    const isCorrect = feedback?.correctAnswers.includes(option.id);
+                    const isWrong = selectedAnswer === option.id && feedback && !feedback.isCorrect;
+                    const isIdle = feedback && !isCorrect && selectedAnswer !== option.id;
+
+                    return (
+                      <motion.button
+                        key={option.id}
+                        custom={i}
+                        variants={cardVariants}
+                        initial="hidden"
+                        animate="visible"
+                        whileHover={phase === "playing" ? { scale: 1.025 } : {}}
+                        whileTap={phase === "playing" ? { scale: 0.975 } : {}}
+                        onClick={() => handleSelectAnswer(option.id)}
+                        disabled={phase !== "playing"}
+                        id={`answer-${option.id}`}
+                        className={`answer-card text-left ${
+                          isCorrect ? "answer-card-correct" :
+                          isWrong ? "answer-card-wrong" :
+                          isIdle ? "answer-card-disabled" : ""
+                        }`}
+                        style={
+                          !isCorrect && !isWrong && !isIdle
+                            ? { backgroundColor: accent.bg }
+                            : undefined
+                        }
+                      >
+                        {/* Option badge */}
+                        <span
+                          className="shrink-0 w-9 h-9 rounded-[0.75rem] flex items-center justify-center text-sm font-extrabold"
+                          style={{
+                            background: isCorrect ? "#16a34a" : isWrong ? "#c0334f" : accent.badge,
+                            color: "white",
+                          }}
+                        >
+                          {i + 1}
+                        </span>
+
+                        <span className="flex-1 font-semibold text-on-surface">
+                          {option.text}
+                        </span>
+
+                        {isCorrect && (
+                          <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", bounce: 0.5 }}
+                            className="text-success text-xl shrink-0">✓</motion.span>
+                        )}
+                        {isWrong && (
+                          <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }}
+                            className="text-error text-xl shrink-0">✗</motion.span>
+                        )}
+                      </motion.button>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Points float / time up */}
+              <AnimatePresence>
+                {feedback && feedback.pointsEarned > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 0 }}
+                    animate={{ opacity: [0, 1, 0], y: -50 }}
+                    transition={{ duration: 1.4 }}
+                    className="text-center mt-5"
+                  >
+                    <span className="text-3xl font-extrabold text-gradient">+{feedback.pointsEarned}</span>
+                  </motion.div>
+                )}
+                {feedback && feedback.pointsEarned === 0 && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="text-center mt-5"
+                  >
+                    <span className="text-lg font-bold text-error">
+                      {selectedAnswer ? "Jawaban salah" : "Waktu habis!"}
+                    </span>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* Explanation */}
+              {feedback?.explanation && (
+                <motion.div
+                  initial={{ opacity: 0, y: 16 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="mt-5 p-5 bg-surface-high rounded-[1rem]"
+                >
+                  <p className="text-on-surface-variant text-xs font-bold uppercase tracking-[0.05em] mb-2">
+                    Penjelasan
+                  </p>
+                  <p className="text-on-surface-variant text-sm leading-relaxed">{feedback.explanation}</p>
+                </motion.div>
+              )}
+            </motion.div>
+          </AnimatePresence>
+        </div>
       </main>
 
-      <footer className="px-6 py-4 border-t border-white/5">
-        <div className="flex items-center gap-2 max-w-4xl mx-auto">
+      {/* ── Question progress dots ── */}
+      <footer className="relative z-10 px-6 pb-6">
+        <div className="flex items-center gap-1.5 max-w-3xl mx-auto">
           {questions.map((_, i) => (
-            <div key={i} className={`h-2 flex-1 rounded-full transition-colors duration-300 ${i < currentIndex ? "bg-success" : i === currentIndex ? "bg-primary animate-pulse" : "bg-white/10"}`} />
+            <div
+              key={i}
+              className="h-1.5 flex-1 rounded-pill transition-all duration-400"
+              style={{
+                background: i < currentIndex
+                  ? "#4ade80"
+                  : i === currentIndex
+                  ? "linear-gradient(90deg, #b6a0ff, #7e51ff)"
+                  : "rgba(76,64,113,0.4)"
+              }}
+            />
           ))}
         </div>
       </footer>
