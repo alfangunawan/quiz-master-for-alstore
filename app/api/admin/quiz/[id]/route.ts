@@ -17,6 +17,14 @@ export async function GET(
       include: {
         questions: { orderBy: { order: "asc" } },
         _count: { select: { sessions: true } },
+        waitingRoom: {
+          include: {
+            participants: {
+              where: { kicked: false },
+              orderBy: { joinedAt: "asc" },
+            },
+          },
+        },
       },
     });
 
@@ -41,7 +49,6 @@ export async function PUT(
     }
 
     const body = await req.json();
-    
     const quiz = await prisma.quiz.findUnique({ where: { id: params.id } });
     if (!quiz || quiz.createdById !== session.user.id) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
@@ -54,12 +61,15 @@ export async function PUT(
         description: body.description,
         category: body.category,
         tags: body.tags,
+        mode: body.mode,
         visibility: body.visibility,
         randomizeQ: body.randomizeQ,
         randomizeA: body.randomizeA,
         maxParticipants: body.maxParticipants,
         showLiveBoard: body.showLiveBoard,
         allowGuest: body.allowGuest,
+        scheduledAt: body.scheduledAt ? new Date(body.scheduledAt) : null,
+        expiresAt: body.expiresAt ? new Date(body.expiresAt) : null,
       },
     });
 
@@ -85,7 +95,6 @@ export async function DELETE(
     }
 
     await prisma.quiz.delete({ where: { id: params.id } });
-
     return NextResponse.json({ success: true });
   } catch (error) {
     return NextResponse.json({ error: "Server error" }, { status: 500 });

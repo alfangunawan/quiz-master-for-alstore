@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 
+// SCHEDULED → WAITING: opens the waiting room
 export async function POST(
   req: NextRequest,
   { params }: { params: { id: string } }
@@ -17,29 +18,28 @@ export async function POST(
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const questionCount = await prisma.question.count({ where: { quizId: params.id } });
-    if (questionCount === 0) {
+    if (quiz.status !== "SCHEDULED") {
       return NextResponse.json(
-        { error: "Quiz harus memiliki minimal 1 soal" },
+        { error: "Quiz harus berstatus SCHEDULED untuk membuka ruang tunggu" },
         { status: 400 }
       );
     }
 
-    // SCHEDULED mode → status becomes SCHEDULED (waiting room not yet open)
-    // OPEN mode → status becomes ACTIVE immediately
-    const newStatus = quiz.mode === "SCHEDULED" ? "SCHEDULED" : "ACTIVE";
+    // Create waiting room if not exists
+    await prisma.waitingRoom.upsert({
+      where: { quizId: params.id },
+      update: {},
+      create: { quizId: params.id },
+    });
 
     const updated = await prisma.quiz.update({
       where: { id: params.id },
-      data: {
-        status: newStatus,
-        publishedAt: new Date(),
-        visibility: quiz.visibility === "DRAFT" ? "PUBLIC" : quiz.visibility,
-      },
+      data: { status: "WAITING" },
     });
 
     return NextResponse.json({ quiz: updated });
   } catch (error) {
+    console.error("Open room error:", error);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }

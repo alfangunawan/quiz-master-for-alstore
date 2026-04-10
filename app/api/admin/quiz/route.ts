@@ -9,21 +9,19 @@ const quizSchema = z.object({
   description: z.string().optional(),
   category: z.string().optional(),
   tags: z.array(z.string()).optional(),
+  mode: z.enum(["SCHEDULED", "OPEN"]).optional(),
   visibility: z.enum(["PUBLIC", "PRIVATE", "DRAFT"]).optional(),
   randomizeQ: z.boolean().optional(),
   randomizeA: z.boolean().optional(),
   maxParticipants: z.number().nullable().optional(),
   showLiveBoard: z.boolean().optional(),
   allowGuest: z.boolean().optional(),
+  scheduledAt: z.string().nullable().optional(),
+  expiresAt: z.string().nullable().optional(),
   questions: z
     .array(
       z.object({
-        type: z.enum([
-          "MULTIPLE_CHOICE",
-          "TRUE_FALSE",
-          "SHORT_ANSWER",
-          "MULTIPLE_SELECT",
-        ]),
+        type: z.enum(["MULTIPLE_CHOICE", "TRUE_FALSE", "SHORT_ANSWER", "MULTIPLE_SELECT"]),
         text: z.string().min(1),
         image: z.string().nullable().optional(),
         options: z.any(),
@@ -43,10 +41,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
-    });
-
+    const user = await prisma.user.findUnique({ where: { id: session.user.id } });
     if (!user || (user.role !== "ADMIN" && user.role !== "SUPER_ADMIN")) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
@@ -54,7 +49,6 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const validated = quizSchema.parse(body);
 
-    // Generate unique code
     let code = generateQuizCode();
     let codeExists = await prisma.quiz.findUnique({ where: { code } });
     while (codeExists) {
@@ -69,12 +63,15 @@ export async function POST(req: NextRequest) {
         category: validated.category,
         tags: validated.tags || [],
         code,
+        mode: validated.mode || "OPEN",
         visibility: validated.visibility || "PRIVATE",
         randomizeQ: validated.randomizeQ || false,
         randomizeA: validated.randomizeA || false,
         maxParticipants: validated.maxParticipants,
         showLiveBoard: validated.showLiveBoard ?? true,
         allowGuest: validated.allowGuest || false,
+        scheduledAt: validated.scheduledAt ? new Date(validated.scheduledAt) : null,
+        expiresAt: validated.expiresAt ? new Date(validated.expiresAt) : null,
         createdById: user.id,
         questions: {
           create: validated.questions.map((q) => ({
@@ -89,24 +86,16 @@ export async function POST(req: NextRequest) {
           })),
         },
       },
-      include: {
-        questions: true,
-      },
+      include: { questions: true },
     });
 
     return NextResponse.json({ quiz }, { status: 201 });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: error.errors[0].message },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: error.issues[0].message }, { status: 400 });
     }
     console.error("Create quiz error:", error);
-    return NextResponse.json(
-      { error: "Terjadi kesalahan server" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Terjadi kesalahan server" }, { status: 500 });
   }
 }
 
@@ -117,10 +106,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
-    });
-
+    const user = await prisma.user.findUnique({ where: { id: session.user.id } });
     if (!user || (user.role !== "ADMIN" && user.role !== "SUPER_ADMIN")) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
@@ -130,15 +116,13 @@ export async function GET(req: NextRequest) {
       orderBy: { createdAt: "desc" },
       include: {
         _count: { select: { sessions: true, questions: true } },
+        waitingRoom: { include: { _count: { select: { participants: true } } } },
       },
     });
 
     return NextResponse.json({ quizzes });
   } catch (error) {
     console.error("Get quizzes error:", error);
-    return NextResponse.json(
-      { error: "Terjadi kesalahan server" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Terjadi kesalahan server" }, { status: 500 });
   }
 }

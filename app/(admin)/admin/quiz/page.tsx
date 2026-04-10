@@ -20,6 +20,7 @@ export default async function QuizListPage() {
     orderBy: { createdAt: "desc" },
     include: {
       _count: { select: { sessions: true, questions: true } },
+      waitingRoom: { select: { _count: { select: { participants: true } } } },
     },
   });
 
@@ -30,11 +31,14 @@ export default async function QuizListPage() {
         title: q.title,
         description: q.description,
         status: q.status,
+        mode: q.mode,
+        scheduledAt: q.scheduledAt?.toISOString() || null,
         code: q.code,
         category: q.category,
         visibility: q.visibility,
         questionsCount: q._count.questions,
         participantsCount: q._count.sessions,
+        waitingCount: q.waitingRoom?._count.participants ?? 0,
         createdAt: q.createdAt.toISOString(),
       }))}
     />

@@ -19,8 +19,15 @@ enum Visibility {
   DRAFT
 }
 
+enum QuizMode {
+  SCHEDULED
+  OPEN
+}
+
 enum QuizStatus {
   DRAFT
+  SCHEDULED
+  WAITING
   ACTIVE
   FINISHED
   ARCHIVED
@@ -78,6 +85,7 @@ model Quiz {
   category        String?
   tags            String[]
   code            String     @unique
+  mode            QuizMode   @default(OPEN)
   visibility      Visibility @default(PRIVATE)
   status          QuizStatus @default(DRAFT)
   randomizeQ      Boolean    @default(false)
@@ -85,6 +93,8 @@ model Quiz {
   maxParticipants Int?
   showLiveBoard   Boolean    @default(true)
   allowGuest      Boolean    @default(false)
+  scheduledAt     DateTime?
+  expiresAt       DateTime?
   createdAt       DateTime   @default(now())
   updatedAt       DateTime   @updatedAt
   publishedAt     DateTime?
@@ -93,6 +103,7 @@ model Quiz {
   createdById     String
   questions       Question[]
   sessions        QuizSession[]
+  waitingRoom     WaitingRoom?
 
   @@map("quizzes")
 }
@@ -148,4 +159,28 @@ model Answer {
   question       Question    @relation(fields: [questionId], references: [id])
 
   @@map("answers")
+}
+
+model WaitingRoom {
+  id           String               @id @default(cuid())
+  quizId       String               @unique
+  openedAt     DateTime             @default(now())
+
+  quiz         Quiz                 @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  participants WaitingParticipant[]
+
+  @@map("waiting_rooms")
+}
+
+model WaitingParticipant {
+  id            String      @id @default(cuid())
+  waitingRoomId String
+  userId        String?
+  guestName     String?
+  joinedAt      DateTime    @default(now())
+  kicked        Boolean     @default(false)
+
+  waitingRoom   WaitingRoom @relation(fields: [waitingRoomId], references: [id], onDelete: Cascade)
+
+  @@map("waiting_participants")
 }

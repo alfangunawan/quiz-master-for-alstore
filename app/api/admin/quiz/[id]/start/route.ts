@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 
+// WAITING → ACTIVE: starts quiz for all waiting participants
 export async function POST(
   req: NextRequest,
   { params }: { params: { id: string } }
@@ -17,29 +18,24 @@ export async function POST(
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const questionCount = await prisma.question.count({ where: { quizId: params.id } });
-    if (questionCount === 0) {
+    if (quiz.status !== "WAITING" && quiz.status !== "SCHEDULED") {
       return NextResponse.json(
-        { error: "Quiz harus memiliki minimal 1 soal" },
+        { error: "Quiz harus berstatus WAITING atau SCHEDULED untuk dimulai" },
         { status: 400 }
       );
     }
 
-    // SCHEDULED mode → status becomes SCHEDULED (waiting room not yet open)
-    // OPEN mode → status becomes ACTIVE immediately
-    const newStatus = quiz.mode === "SCHEDULED" ? "SCHEDULED" : "ACTIVE";
-
     const updated = await prisma.quiz.update({
       where: { id: params.id },
       data: {
-        status: newStatus,
-        publishedAt: new Date(),
-        visibility: quiz.visibility === "DRAFT" ? "PUBLIC" : quiz.visibility,
+        status: "ACTIVE",
+        publishedAt: quiz.publishedAt || new Date(),
       },
     });
 
     return NextResponse.json({ quiz: updated });
   } catch (error) {
+    console.error("Start quiz error:", error);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }

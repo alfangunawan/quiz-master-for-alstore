@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState, useCallback, useRef } from "react";
-import { useParams, useRouter } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
 
 interface QuestionData {
   id: string;
@@ -32,14 +32,23 @@ interface ResultData {
   wrongAnswers: number;
 }
 
-interface LeaderEntry {
+interface FinalLeaderEntry {
   rank: number;
   name: string;
   score: number;
   accuracy: number;
 }
 
-// Option badge accent colors (1-4)
+interface InterLeaderEntry {
+  rank: number;
+  sessionId: string;
+  name: string;
+  score: number;
+  delta: number;
+  isCurrentUser: boolean;
+}
+
+// Option badge accent colors (1–4)
 const optionAccents = [
   { bg: "rgba(182,160,255,0.15)", ring: "#b6a0ff", badge: "linear-gradient(135deg,#b6a0ff,#7e51ff)" },
   { bg: "rgba(0,217,184,0.12)",   ring: "#00d9b8", badge: "linear-gradient(135deg,#00d9b8,#009e87)" },
@@ -51,11 +60,16 @@ const cardVariants = {
   hidden: { opacity: 0, y: 30 },
   visible: (i: number) => ({
     opacity: 1, y: 0,
-    transition: { duration: 0.35, delay: i * 0.08, ease: "easeOut" },
+    transition: { duration: 0.35, delay: i * 0.08, ease: "easeOut" as const },
   }),
 };
 
-// Icons
+const LightningIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+    <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" fill="white"/>
+  </svg>
+);
+
 const BarChartIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
     <rect x="3" y="12" width="4" height="9" rx="1" fill="currentColor" opacity=".6"/>
@@ -71,18 +85,170 @@ const UserIcon = () => (
   </svg>
 );
 
-const LightningIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-    <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" fill="white"/>
-  </svg>
-);
+// Rank medal color
+function rankColor(rank: number) {
+  if (rank === 1) return "#ffb86c";
+  if (rank === 2) return "#cbc2e8";
+  if (rank === 3) return "#e07b39";
+  return "#4c4071";
+}
+
+// Inter-question leaderboard screen
+function InterLeaderboard({
+  entries,
+  prevEntries,
+  questionNum,
+  totalQuestions,
+  countdown,
+}: {
+  entries: InterLeaderEntry[];
+  prevEntries: InterLeaderEntry[];
+  questionNum: number;
+  totalQuestions: number;
+  countdown: number;
+}) {
+  return (
+    <div className="min-h-screen bg-surface flex flex-col px-6 py-10 relative overflow-hidden">
+      {/* Ambient */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute -top-32 left-1/2 -translate-x-1/2 w-[500px] h-[500px] rounded-full opacity-15"
+          style={{ background: "radial-gradient(circle, #7e51ff, transparent)" }} />
+      </div>
+
+      <div className="w-full max-w-lg mx-auto relative z-10 flex flex-col h-full">
+        {/* Header */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center mb-8"
+        >
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-pill bg-primary/10 mb-4">
+            <span className="text-primary font-bold text-xs uppercase tracking-[0.06em]">
+              Leaderboard — Soal {questionNum} dari {totalQuestions}
+            </span>
+          </div>
+          <p className="text-on-surface-variant text-sm">
+            Soal berikutnya dalam <span className="text-primary font-bold">{countdown}s</span>
+          </p>
+        </motion.div>
+
+        {/* Entries */}
+        <LayoutGroup>
+          <div className="space-y-2 flex-1">
+            <AnimatePresence>
+              {entries.map((entry, i) => {
+                const prev = prevEntries.find((p) => p.sessionId === entry.sessionId);
+                const rankChange = prev ? prev.rank - entry.rank : 0; // positive = moved up
+                const isMe = entry.isCurrentUser;
+
+                return (
+                  <motion.div
+                    key={entry.sessionId}
+                    layout
+                    layoutId={entry.sessionId}
+                    initial={{ opacity: 0, x: -30 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ type: "spring", stiffness: 300, damping: 30, delay: i * 0.06 }}
+                    className={`flex items-center gap-3 p-4 rounded-[1rem] ${
+                      isMe
+                        ? "bg-primary/15"
+                        : "bg-surface-high"
+                    }`}
+                    style={isMe ? { border: "1px solid rgba(182,160,255,0.3)" } : {}}
+                  >
+                    {/* Rank */}
+                    <div className="w-10 h-10 rounded-[0.75rem] flex items-center justify-center font-extrabold text-base shrink-0"
+                      style={{
+                        background: entry.rank <= 3 ? `${rankColor(entry.rank)}20` : "rgba(76,64,113,0.3)",
+                        color: entry.rank <= 3 ? rankColor(entry.rank) : "#7a6f99"
+                      }}>
+                      {entry.rank <= 3 ? ["🥇","🥈","🥉"][entry.rank - 1] : `#${entry.rank}`}
+                    </div>
+
+                    {/* Name */}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-on-surface font-bold text-sm truncate">
+                        {entry.name}
+                        {isMe && <span className="ml-2 text-[10px] text-primary font-bold bg-primary/10 px-2 py-0.5 rounded-pill">Kamu</span>}
+                      </p>
+                      <p className="text-on-surface-variant text-xs">{entry.score.toLocaleString()} pts</p>
+                    </div>
+
+                    {/* Delta badge */}
+                    {entry.delta > 0 && (
+                      <motion.span
+                        initial={{ scale: 0, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        transition={{ delay: 0.3 + i * 0.06, type: "spring", bounce: 0.5 }}
+                        className="text-success text-xs font-extrabold bg-success/10 px-2 py-1 rounded-pill shrink-0"
+                      >
+                        +{entry.delta}
+                      </motion.span>
+                    )}
+
+                    {/* Rank change arrow */}
+                    {rankChange !== 0 && (
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: 0.4 + i * 0.06 }}
+                        className="shrink-0 flex items-center gap-1"
+                      >
+                        {rankChange > 0 ? (
+                          <span className="text-success text-xs font-bold flex items-center gap-0.5">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+                              <path d="M12 19V5M5 12l7-7 7 7" stroke="#4ade80" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                            {rankChange}
+                          </span>
+                        ) : (
+                          <span className="text-error text-xs font-bold flex items-center gap-0.5">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+                              <path d="M12 5v14M19 12l-7 7-7-7" stroke="#ff6b8a" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                            {Math.abs(rankChange)}
+                          </span>
+                        )}
+                      </motion.div>
+                    )}
+                  </motion.div>
+                );
+              })}
+            </AnimatePresence>
+
+            {entries.length === 0 && (
+              <div className="text-center py-12">
+                <p className="text-on-surface-variant/40 text-sm">Belum ada data leaderboard</p>
+              </div>
+            )}
+          </div>
+        </LayoutGroup>
+
+        {/* Progress bar for countdown */}
+        <div className="mt-6">
+          <div className="h-1.5 rounded-pill bg-surface-mid overflow-hidden">
+            <motion.div
+              className="h-full rounded-pill"
+              style={{ background: "linear-gradient(90deg, #b6a0ff, #00d9b8)" }}
+              initial={{ width: "100%" }}
+              animate={{ width: "0%" }}
+              transition={{ duration: 4, ease: "linear" }}
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function PlayQuizPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const quizId = params.id as string;
+  const guestName = searchParams.get("guestName");
 
-  const [phase, setPhase] = useState<"loading" | "playing" | "feedback" | "result">("loading");
+  const [phase, setPhase] = useState<"loading" | "playing" | "feedback" | "leaderboard" | "result">("loading");
   const [sessionId, setSessionId] = useState("");
   const [quizTitle, setQuizTitle] = useState("");
   const [category, setCategory] = useState("Quiz");
@@ -95,17 +261,24 @@ export default function PlayQuizPage() {
   const [shortAnswer, setShortAnswer] = useState("");
   const [feedback, setFeedback] = useState<FeedbackData | null>(null);
   const [result, setResult] = useState<ResultData | null>(null);
-  const [leaderboard, setLeaderboard] = useState<LeaderEntry[]>([]);
+  const [finalLeaderboard, setFinalLeaderboard] = useState<FinalLeaderEntry[]>([]);
+  const [interLeader, setInterLeader] = useState<InterLeaderEntry[]>([]);
+  const [prevInterLeader, setPrevInterLeader] = useState<InterLeaderEntry[]>([]);
+  const [leaderCountdown, setLeaderCountdown] = useState(4);
   const [error, setError] = useState("");
 
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const leaderTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const leaderIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const startTimeRef = useRef<number>(0);
   const hasTimedUpRef = useRef(false);
 
+  // Fetch quiz on mount
   useEffect(() => {
     const fetchQuiz = async () => {
       try {
-        const res = await fetch(`/api/quiz/${quizId}/play`);
+        const url = `/api/quiz/${quizId}/play${guestName ? `?guestName=${encodeURIComponent(guestName)}` : ""}`;
+        const res = await fetch(url);
         const data = await res.json();
         if (!res.ok) { setError(data.error || "Gagal memuat quiz"); return; }
         setSessionId(data.sessionId);
@@ -116,7 +289,64 @@ export default function PlayQuizPage() {
       } catch { setError("Gagal memuat quiz"); }
     };
     fetchQuiz();
-  }, [quizId]);
+  }, [quizId, guestName]);
+
+  const finishQuiz = useCallback(async () => {
+    setPhase("result");
+    try {
+      const res = await fetch(`/api/quiz/${quizId}/finish`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sessionId }),
+      });
+      const data = await res.json();
+      setResult(data.result);
+      setFinalLeaderboard(data.leaderboard || []);
+    } catch {
+      setResult({ score, totalTime: 0, accuracy: 0, rank: 0, totalQuestions: questions.length, correctAnswers: 0, wrongAnswers: 0 });
+    }
+  }, [quizId, sessionId, score, questions.length]);
+
+  const showLeaderboard = useCallback(async (questionId: string, isLast: boolean) => {
+    if (isLast) { finishQuiz(); return; }
+
+    // Fetch inter-question leaderboard
+    try {
+      const res = await fetch(`/api/quiz/${quizId}/leaderboard?questionId=${questionId}&sessionId=${sessionId}`);
+      const data = await res.json();
+      setPrevInterLeader(interLeader);
+      setInterLeader(data.leaderboard || []);
+    } catch {}
+
+    setPhase("leaderboard");
+    setLeaderCountdown(4);
+  }, [quizId, sessionId, interLeader, finishQuiz]);
+
+  // Countdown display + transition out of leaderboard phase
+  useEffect(() => {
+    if (phase !== "leaderboard") return;
+
+    // Tick countdown display every second
+    leaderIntervalRef.current = setInterval(() => {
+      setLeaderCountdown(prev => Math.max(0, prev - 1));
+    }, 1000);
+
+    // After 4 s, advance to next question (outside state-updater so React batches correctly)
+    leaderTimerRef.current = setTimeout(() => {
+      clearInterval(leaderIntervalRef.current!);
+      setCurrentIndex(prev => prev + 1);
+      setSelectedAnswer(null);
+      setShortAnswer("");
+      setFeedback(null);
+      hasTimedUpRef.current = false;
+      setPhase("playing");
+    }, 4000);
+
+    return () => {
+      clearInterval(leaderIntervalRef.current!);
+      clearTimeout(leaderTimerRef.current!);
+    };
+  }, [phase]);
 
   const handleTimeUp = useCallback(async () => {
     if (hasTimedUpRef.current) return;
@@ -137,19 +367,13 @@ export default function PlayQuizPage() {
       setStreak(0);
     } catch {}
 
+    const isLast = currentIndex >= questions.length - 1;
     setTimeout(() => {
-      if (currentIndex >= questions.length - 1) { finishQuiz(); }
-      else {
-        setCurrentIndex(prev => prev + 1);
-        setSelectedAnswer(null);
-        setShortAnswer("");
-        setFeedback(null);
-        hasTimedUpRef.current = false;
-        setPhase("playing");
-      }
-    }, 2500);
-  }, [currentIndex, questions, sessionId, quizId]);
+      showLeaderboard(question.id, isLast);
+    }, 2000);
+  }, [currentIndex, questions, sessionId, quizId, showLeaderboard]);
 
+  // Timer
   useEffect(() => {
     if (phase !== "playing" || questions.length === 0) return;
     const question = questions[currentIndex];
@@ -190,46 +414,24 @@ export default function PlayQuizPage() {
       });
       const data = await res.json();
       setFeedback(data);
-      if (data.isCorrect) { setScore(prev => prev + data.pointsEarned); setStreak(prev => prev + 1); }
-      else { setStreak(0); }
+      if (data.isCorrect) {
+        setScore(prev => prev + data.pointsEarned);
+        setStreak(prev => prev + 1);
+      } else {
+        setStreak(0);
+      }
     } catch {}
 
+    const isLast = currentIndex >= questions.length - 1;
     setTimeout(() => {
-      if (currentIndex >= questions.length - 1) { finishQuiz(); }
-      else {
-        setCurrentIndex(prev => prev + 1);
-        setSelectedAnswer(null);
-        setShortAnswer("");
-        setFeedback(null);
-        setPhase("playing");
-      }
-    }, 2500);
-  };
-
-  const finishQuiz = async () => {
-    setPhase("result");
-    try {
-      const res = await fetch(`/api/quiz/${quizId}/finish`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sessionId }),
-      });
-      const data = await res.json();
-      setResult(data.result);
-      setLeaderboard(data.leaderboard);
-    } catch {
-      setResult({ score, totalTime: 0, accuracy: 0, rank: 0, totalQuestions: questions.length, correctAnswers: 0, wrongAnswers: 0 });
-    }
+      showLeaderboard(question.id, isLast);
+    }, 2000);
   };
 
   // ── Error ──
   if (error) return (
     <div className="min-h-screen bg-surface flex items-center justify-center px-6">
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-96 h-96 rounded-full opacity-20"
-          style={{ background: "radial-gradient(circle, #7e51ff, transparent)" }} />
-      </div>
-      <div className="card p-12 text-center max-w-md relative z-10">
+      <div className="card p-12 text-center max-w-md">
         <div className="w-16 h-16 rounded-[1.5rem] bg-error/10 flex items-center justify-center mx-auto mb-6">
           <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
             <circle cx="12" cy="12" r="10" stroke="#ff6b8a" strokeWidth="1.8"/>
@@ -258,7 +460,33 @@ export default function PlayQuizPage() {
     </div>
   );
 
-  // ── Result ──
+  // ── Inter-question Leaderboard ──
+  if (phase === "leaderboard") return (
+    <InterLeaderboard
+      entries={interLeader}
+      prevEntries={prevInterLeader}
+      questionNum={currentIndex + 1}
+      totalQuestions={questions.length}
+      countdown={leaderCountdown}
+    />
+  );
+
+  // ── Result loading (fetch in-flight) ──
+  if (phase === "result" && !result) return (
+    <div className="min-h-screen bg-surface flex items-center justify-center">
+      <div className="text-center">
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
+          className="w-14 h-14 rounded-full mx-auto mb-6"
+          style={{ border: "3px solid rgba(182,160,255,0.2)", borderTopColor: "#b6a0ff" }}
+        />
+        <p className="text-on-surface-variant font-medium">Menghitung hasil...</p>
+      </div>
+    </div>
+  );
+
+  // ── Final Result ──
   if (phase === "result" && result) {
     const grade = result.accuracy >= 90
       ? { label: "Excellent!", color: "#b6a0ff", sub: "Luar biasa! Kamu sangat hebat." }
@@ -329,21 +557,21 @@ export default function PlayQuizPage() {
             ))}
           </div>
 
-          {leaderboard.length > 0 && (
+          {finalLeaderboard.length > 0 && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.7 }}
               className="card p-6 mb-6"
             >
-              <h2 className="text-on-surface font-bold text-base mb-4 uppercase tracking-[0.05em]">Leaderboard</h2>
+              <h2 className="text-on-surface font-bold text-base mb-4 uppercase tracking-[0.05em]">Leaderboard Akhir</h2>
               <div className="space-y-2">
-                {leaderboard.map((entry, i) => (
+                {finalLeaderboard.map((entry, i) => (
                   <div key={i} className={`flex items-center justify-between p-3 rounded-[1rem] ${i < 3 ? "bg-surface-highest" : "bg-surface-mid"}`}>
                     <div className="flex items-center gap-3">
-                      <span className="font-bold text-sm w-6 text-center" style={{
-                        color: i === 0 ? "#ffb86c" : i === 1 ? "#cbc2e8" : i === 2 ? "#e07b39" : "#4c4071"
-                      }}>#{entry.rank}</span>
+                      <span className="font-bold text-sm w-6 text-center" style={{ color: rankColor(entry.rank) }}>
+                        #{entry.rank}
+                      </span>
                       <span className="text-on-surface text-sm font-medium">{entry.name}</span>
                     </div>
                     <span className="text-on-surface font-bold text-sm">{entry.score.toLocaleString()}</span>
@@ -359,19 +587,15 @@ export default function PlayQuizPage() {
             transition={{ delay: 0.9 }}
             className="flex gap-3"
           >
-            <button onClick={() => router.push("/dashboard")} className="btn-ghost flex-1">
-              Dashboard
-            </button>
-            <button onClick={() => router.push("/")} className="btn-primary flex-1">
-              Kembali
-            </button>
+            <button onClick={() => router.push("/dashboard")} className="btn-ghost flex-1">Dashboard</button>
+            <button onClick={() => router.push("/")} className="btn-primary flex-1">Kembali</button>
           </motion.div>
         </div>
       </div>
     );
   }
 
-  // ── Playing ──
+  // ── Playing / Feedback ──
   const question = questions[currentIndex];
   if (!question) return null;
 
@@ -381,11 +605,11 @@ export default function PlayQuizPage() {
   return (
     <div className="min-h-screen bg-surface flex flex-col">
       {/* Ambient orbs */}
-      <div className="fixed inset-0 pointer-events-none z-0">
-        <div className="absolute top-0 right-0 w-[400px] h-[400px] rounded-full opacity-10"
-          style={{ background: "radial-gradient(circle, #7e51ff, transparent)" }} />
-        <div className="absolute bottom-0 left-0 w-[300px] h-[300px] rounded-full opacity-8"
-          style={{ background: "radial-gradient(circle, #00d9b8, transparent)" }} />
+      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+        <div className="absolute -top-32 -right-32 w-96 h-96 rounded-full"
+          style={{ background: "radial-gradient(circle, rgba(126,81,255,0.3), transparent 70%)", filter: "blur(60px)" }} />
+        <div className="absolute -bottom-32 -left-32 w-80 h-80 rounded-full"
+          style={{ background: "radial-gradient(circle, rgba(0,217,184,0.2), transparent 70%)", filter: "blur(60px)" }} />
       </div>
 
       {/* ── Header ── */}
@@ -405,24 +629,24 @@ export default function PlayQuizPage() {
             <div className="text-center">
               <p className="text-on-surface-variant text-[10px] font-bold uppercase tracking-[0.08em]">Progress</p>
               <p className="text-on-surface font-bold text-sm leading-none mt-0.5">
-                Question {currentIndex + 1}/{questions.length}
+                Soal {currentIndex + 1}/{questions.length}
               </p>
             </div>
 
             <div className="text-center">
-              <p className="text-on-surface-variant text-[10px] font-bold uppercase tracking-[0.08em]">Points</p>
+              <p className="text-on-surface-variant text-[10px] font-bold uppercase tracking-[0.08em]">Poin</p>
               <p className="font-bold text-sm leading-none mt-0.5 text-gradient">{score.toLocaleString()}</p>
             </div>
 
             <AnimatePresence>
-              {streak >= 1 && (
+              {streak >= 2 && (
                 <motion.div
                   initial={{ scale: 0, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   exit={{ scale: 0, opacity: 0 }}
                   className="badge-streak flex items-center gap-1.5 px-3 py-1.5 rounded-pill text-xs font-bold"
                 >
-                  🔥 {streak} Streak
+                  🔥 {streak}x
                 </motion.div>
               )}
             </AnimatePresence>
@@ -454,7 +678,7 @@ export default function PlayQuizPage() {
               {/* Question Card */}
               <div className="card-highest p-8 mb-6" style={{ boxShadow: "0 20px 40px rgba(0,0,0,0.35)" }}>
                 <p className="text-secondary font-bold text-xs uppercase tracking-[0.08em] mb-4">
-                  {category} • Level {currentIndex + 1}
+                  {category} • Soal {currentIndex + 1}
                 </p>
                 <h2 className="text-on-surface text-2xl md:text-3xl font-extrabold leading-snug tracking-[-0.01em]">
                   {question.text}
@@ -465,7 +689,7 @@ export default function PlayQuizPage() {
               <div className="mb-6 px-1">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-on-surface-variant text-[10px] font-bold uppercase tracking-[0.08em]">
-                    Time Remaining
+                    Waktu Tersisa
                   </span>
                   <span className={`font-bold text-sm font-mono ${isLowTime ? "text-error animate-pulse" : "text-on-surface"}`}>
                     {timeRemaining}s
@@ -538,7 +762,6 @@ export default function PlayQuizPage() {
                             : undefined
                         }
                       >
-                        {/* Option badge */}
                         <span
                           className="shrink-0 w-9 h-9 rounded-[0.75rem] flex items-center justify-center text-sm font-extrabold"
                           style={{
@@ -549,9 +772,7 @@ export default function PlayQuizPage() {
                           {i + 1}
                         </span>
 
-                        <span className="flex-1 font-semibold text-on-surface">
-                          {option.text}
-                        </span>
+                        <span className="flex-1 font-semibold text-on-surface">{option.text}</span>
 
                         {isCorrect && (
                           <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", bounce: 0.5 }}
@@ -567,7 +788,7 @@ export default function PlayQuizPage() {
                 </div>
               )}
 
-              {/* Points float / time up */}
+              {/* Points float */}
               <AnimatePresence>
                 {feedback && feedback.pointsEarned > 0 && (
                   <motion.div
@@ -610,7 +831,7 @@ export default function PlayQuizPage() {
         </div>
       </main>
 
-      {/* ── Question progress dots ── */}
+      {/* ── Question progress bar ── */}
       <footer className="relative z-10 px-6 pb-6">
         <div className="flex items-center gap-1.5 max-w-3xl mx-auto">
           {questions.map((_, i) => (
