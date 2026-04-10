@@ -1,0 +1,151 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum Visibility {
+  PUBLIC
+  PRIVATE
+  DRAFT
+}
+
+enum QuizStatus {
+  DRAFT
+  ACTIVE
+  FINISHED
+  ARCHIVED
+}
+
+enum QuestionType {
+  MULTIPLE_CHOICE
+  TRUE_FALSE
+  SHORT_ANSWER
+  MULTIPLE_SELECT
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String
+  email         String    @unique
+  password      String?
+  image         String?
+  role          Role      @default(USER)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  sessions      QuizSession[]
+  quizzesCreated Quiz[]
+  accounts      Account[]
+
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Quiz {
+  id              String     @id @default(cuid())
+  title           String
+  description     String?
+  thumbnail       String?
+  category        String?
+  tags            String[]
+  code            String     @unique
+  visibility      Visibility @default(PRIVATE)
+  status          QuizStatus @default(DRAFT)
+  randomizeQ      Boolean    @default(false)
+  randomizeA      Boolean    @default(false)
+  maxParticipants Int?
+  showLiveBoard   Boolean    @default(true)
+  allowGuest      Boolean    @default(false)
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+  publishedAt     DateTime?
+
+  createdBy       User       @relation(fields: [createdById], references: [id])
+  createdById     String
+  questions       Question[]
+  sessions        QuizSession[]
+
+  @@map("quizzes")
+}
+
+model Question {
+  id          String       @id @default(cuid())
+  quizId      String
+  type        QuestionType
+  text        String
+  image       String?
+  options     Json
+  explanation String?
+  timeLimit   Int          @default(30)
+  points      Int          @default(1000)
+  order       Int
+
+  quiz        Quiz         @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  answers     Answer[]
+
+  @@map("questions")
+}
+
+model QuizSession {
+  id           String    @id @default(cuid())
+  quizId       String
+  userId       String?
+  guestName    String?
+  score        Int       @default(0)
+  totalTime    Int       @default(0)
+  accuracy     Float     @default(0)
+  rank         Int?
+  completedAt  DateTime?
+  createdAt    DateTime  @default(now())
+
+  quiz         Quiz      @relation(fields: [quizId], references: [id])
+  user         User?     @relation(fields: [userId], references: [id])
+  answers      Answer[]
+
+  @@map("quiz_sessions")
+}
+
+model Answer {
+  id             String      @id @default(cuid())
+  sessionId      String
+  questionId     String
+  selectedOption Json
+  isCorrect      Boolean
+  pointsEarned   Int
+  timeSpent      Int
+  createdAt      DateTime    @default(now())
+
+  session        QuizSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  question       Question    @relation(fields: [questionId], references: [id])
+
+  @@map("answers")
+}

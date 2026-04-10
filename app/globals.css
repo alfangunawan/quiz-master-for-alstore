@@ -1,0 +1,158 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  ::selection {
+    background: rgba(108, 92, 231, 0.3);
+    color: white;
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: #1A0D3D;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #6C5CE7;
+    border-radius: 3px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #7F6EF3;
+  }
+}
+
+@layer components {
+  .glass-card {
+    @apply bg-white/5 backdrop-blur-xl border border-white/10 rounded-card;
+  }
+
+  .glass-card-light {
+    @apply bg-white/80 backdrop-blur-xl border border-gray-200/50 rounded-card shadow-lg;
+  }
+
+  .gradient-primary {
+    @apply bg-gradient-to-r from-primary to-secondary;
+  }
+
+  .gradient-dark {
+    @apply bg-gradient-to-b from-dark to-dark-50;
+  }
+
+  .btn-primary {
+    @apply px-6 py-3 bg-primary hover:bg-primary-600 text-white font-semibold rounded-btn
+    transition-all duration-200 ease-in-out transform hover:scale-[1.02]
+    active:scale-[0.98] shadow-lg shadow-primary/25 hover:shadow-primary/40
+    focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-2 focus:ring-offset-dark;
+  }
+
+  .btn-secondary {
+    @apply px-6 py-3 bg-surface hover:bg-dark-50 text-white font-semibold rounded-btn
+    border border-white/10 hover:border-white/20
+    transition-all duration-200 ease-in-out transform hover:scale-[1.02]
+    active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-white/20;
+  }
+
+  .btn-danger {
+    @apply px-6 py-3 bg-danger hover:bg-red-700 text-white font-semibold rounded-btn
+    transition-all duration-200 ease-in-out shadow-lg shadow-danger/25
+    focus:outline-none focus:ring-2 focus:ring-danger/50;
+  }
+
+  .btn-ghost {
+    @apply px-6 py-3 text-white/70 hover:text-white hover:bg-white/10
+    font-medium rounded-btn transition-all duration-200;
+  }
+
+  .input-field {
+    @apply w-full px-4 py-3 bg-white/5 border border-white/10 rounded-btn text-white
+    placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-primary/50
+    focus:border-primary/50 transition-all duration-200;
+  }
+
+  .input-field-light {
+    @apply w-full px-4 py-3 bg-white border border-gray-200 rounded-btn text-gray-900
+    placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/50
+    focus:border-primary/50 transition-all duration-200;
+  }
+
+  .answer-card {
+    @apply p-6 rounded-answer cursor-pointer font-semibold text-white text-lg
+    transition-all duration-200 transform hover:scale-[1.03] hover:shadow-lg
+    active:scale-[0.98] border-2 border-transparent
+    focus:outline-none focus:ring-2 focus:ring-white/50;
+  }
+
+  .stat-card {
+    @apply glass-card p-6 flex flex-col gap-2;
+  }
+
+  .sidebar-link {
+    @apply flex items-center gap-3 px-4 py-3 rounded-btn text-white/60
+    hover:text-white hover:bg-white/10 transition-all duration-200 font-medium;
+  }
+
+  .sidebar-link-active {
+    @apply flex items-center gap-3 px-4 py-3 rounded-btn text-white
+    bg-primary/20 border-l-2 border-primary font-semibold;
+  }
+
+  .badge {
+    @apply inline-flex items-center px-3 py-1 text-xs font-semibold rounded-pill;
+  }
+
+  .badge-active {
+    @apply badge bg-success/20 text-success;
+  }
+
+  .badge-draft {
+    @apply badge bg-warning/20 text-warning;
+  }
+
+  .badge-finished {
+    @apply badge bg-white/10 text-white/60;
+  }
+
+  .table-row {
+    @apply border-b border-white/5 hover:bg-white/5 transition-colors duration-150;
+  }
+}
+
+@layer utilities {
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary;
+  }
+
+  .animate-in {
+    animation: animateIn 0.4s ease-out;
+  }
+
+  @keyframes animateIn {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
